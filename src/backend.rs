@@ -21,16 +21,21 @@ mod inner {
         sharing_mode: SharingMode::Shared,
         usage: Usage::Media,
     }) }
-    pub fn make_input_shared() -> AudioRecorderBackend { AudioRecorderBackend::new(OboeSettings {
-        buffer_size: None,
-        performance_mode: PerformanceMode::PowerSaving,
-        audio_api: AudioApi::Unspecified,
-        sharing_mode: SharingMode::Shared,
-        usage: Usage::Media,
-    }) }
 }
 
-#[cfg(not(target_os = "android"))]
+#[cfg(all(not(target_os = "android"), target_env = "ohos"))]
+mod inner {
+    pub use sasa::backend::ohos::{
+        OhosBackend as AudioBackend,
+        OhosRecorderBackend as AudioRecorderBackend,
+        OhosSettings,
+    };
+    pub fn make_output() -> AudioBackend { AudioBackend::new(OhosSettings::default()) }
+    pub fn make_input() -> AudioRecorderBackend { AudioRecorderBackend::new(OhosSettings::default()) }
+    pub fn make_input_shared() -> AudioRecorderBackend { AudioRecorderBackend::new(OhosSettings::default()) }
+}
+
+#[cfg(not(any(target_os = "android", target_env = "ohos")))]
 mod inner {
     pub use sasa::backend::cpal::{
         CpalBackend as AudioBackend,

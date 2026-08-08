@@ -1031,6 +1031,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ohos-audio-sys"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "892313a2851bbb13c11ba075768ef0d0a9a6a8ae53e54641c9c56eda726dc87f"
+
+[[package]]
 name = "ohos-bundle-binding"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1544,6 +1550,7 @@ dependencies = [
  "atomic_float",
  "cpal",
  "oboe",
+ "ohos-audio-sys",
  "parking_lot",
  "ringbuf",
  "symphonia",

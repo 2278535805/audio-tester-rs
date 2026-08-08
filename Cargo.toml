@@ -26,5 +26,8 @@ ndk-context = "0.1"
 sasa = { path = "../sasa", default-features = false, features = ["oboe"] }
 android_logger = "0.14"
 
-[target.'cfg(not(target_os = "android"))'.dependencies]
+[target.'cfg(target_env = "ohos")'.dependencies]
+sasa = { path = "../sasa", default-features = false, features = ["ohos"] }
+
+[target.'cfg(not(any(target_os = "android", target_env = "ohos")))'.dependencies]
 sasa = { path = "../sasa", default-features = false, features = ["cpal"] }
