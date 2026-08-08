@@ -169,6 +169,10 @@ pub struct TapToToneTest {
     viz_threshold: Vec<f32>,
     viz_edges: Vec<usize>,
     viz_sr: u32,
+    measurement_count: usize,
+    latency_sum: f64,
+    latency_min: f64,
+    latency_max: f64,
 }
 
 #[derive(PartialEq)]
@@ -206,6 +210,8 @@ impl TapToToneTest {
             trigger_time: None, phase: AnalysisPhase::Idle,
             viz_samples: Vec::new(), viz_slow: Vec::new(), viz_fast: Vec::new(),
             viz_threshold: Vec::new(), viz_edges: Vec::new(), viz_sr: 48000,
+            measurement_count: 0, latency_sum: 0.0,
+            latency_min: f64::MAX, latency_max: 0.0,
         })
     }
 
@@ -267,6 +273,10 @@ impl TapToToneTest {
             let latency_samples = self.viz_edges[1] - self.viz_edges[0];
             let latency_ms = latency_samples as f64 / sr_f * 1000.0;
             self.result_ms = Some(latency_ms);
+            self.measurement_count += 1;
+            self.latency_sum += latency_ms;
+            if latency_ms < self.latency_min { self.latency_min = latency_ms; }
+            if latency_ms > self.latency_max { self.latency_max = latency_ms; }
         } else if self.viz_edges.len() == 1 {
             self.result_ms = Some(-1.0);
         } else {
@@ -302,7 +312,7 @@ impl TapToToneTest {
         }
 
         let cx = screen_width() / 2.0;
-        let cy = screen_height() / 2.0 - 40.0 * s;
+        let cy = screen_height() / 2.0 - 90.0 * s;
         let tap_size = 180.0 * s;
 
         let (mx, my) = mouse_position();
@@ -321,13 +331,24 @@ impl TapToToneTest {
         if self.measuring {
             draw_text("Measuring...", cx - 50.0 * s, cy + 10.0 * s, 22.0 * s, TEXT);
         } else {
-            draw_text("TAP HERE", cx - 52.0 * s, cy + 10.0 * s, 24.0 * s, TEXT);
+            draw_text("TAP HERE", cx - 45.0 * s, cy + 10.0 * s, 24.0 * s, TEXT);
         }
 
         let btn_x = cx - 80.0 * s;
-        let btn_y = cy + tap_size / 2.0 + 25.0 * s;
+        let btn_y = cy + tap_size / 2.0 + 10.0 * s;
         if draw_button_colored(btn_x, btn_y, 160.0 * s, 36.0 * s, "Trigger Beep", 18.0 * s, BTN_GREEN, BTN_GREEN_HOVER) {
             self.trigger_measurement();
+        }
+
+        let reset_x = cx - 35.0 * s;
+        if draw_button_colored(reset_x, btn_y + 40.0 * s, 70.0 * s, 28.0 * s, "Reset", 14.0 * s, Color::new(0.4, 0.4, 0.45, 1.0), Color::new(0.55, 0.55, 0.6, 1.0)) {
+            self.measurement_count = 0;
+            self.latency_sum = 0.0;
+            self.latency_min = f64::MAX;
+            self.latency_max = 0.0;
+            self.result_ms = None;
+            self.viz_samples.clear();
+            self.viz_edges.clear();
         }
 
         if hovering && !self.measuring && is_mouse_button_pressed(MouseButton::Left)
@@ -342,7 +363,7 @@ impl TapToToneTest {
         }
 
         if let Some(ms) = self.result_ms {
-            let result_y = cy + tap_size / 2.0 + 80.0 * s;
+            let result_y = cy + tap_size / 2.0 + 110.0 * s;
             let fs = 16.0 * s;
             if ms == -3.0 {
                 draw_text("Not enough audio captured - try again", cx - 140.0 * s, result_y, fs, Color::new(1.0, 0.5, 0.3, 1.0));
@@ -351,8 +372,18 @@ impl TapToToneTest {
             } else if ms < 0.0 {
                 draw_text("Only 1 edge detected - tap harder or use fingernail", cx - 180.0 * s, result_y, fs, Color::new(1.0, 0.5, 0.3, 1.0));
             } else {
-                draw_text(&format!("Latency: {ms:.1} ms"), cx - 70.0 * s, result_y, 28.0 * s, Color::new(0.3, 1.0, 0.4, 1.0));
+                draw_text(&format!("Latency: {ms:.1} ms"), cx - 85.0 * s, result_y, 28.0 * s, Color::new(0.3, 1.0, 0.4, 1.0));
             }
+        }
+
+        if self.measurement_count > 0 {
+            let avg = self.latency_sum / self.measurement_count as f64;
+            let stats_y = cy + tap_size / 2.0 + 130.0 * s;
+            draw_text(
+                &format!("min: {:.1}  avg: {:.1}  max: {:.1} ms  ({})",
+                    self.latency_min, avg, self.latency_max, self.measurement_count),
+                cx - 110.0 * s, stats_y, 15.0 * s, TEXT_DIM,
+            );
         }
 
         if !self.viz_samples.is_empty() {
