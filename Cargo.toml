@@ -3,12 +3,23 @@ name = "audio-tester-rs"
 version = "0.1.0"
 edition = "2024"
 
+[package.metadata.android.signing.release]
+path = "C:\\Android\\.android\\debug.keystore"
+keystore_password = "android"
+key_alias = "androiddebugkey"
+key_password = "android"
+
+[lib]
+crate-type = ["lib", "cdylib"]
+
 [dependencies]
 macroquad = { git = "https://github.com/2278535805/macroquad" }
 parking_lot = "0.12"
 
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+ndk-context = "0.1"
+sasa = { path = "../sasa", default-features = false, features = ["oboe"] }
+
 [target.'cfg(not(target_os = "android"))'.dependencies]
 sasa = { path = "../sasa", default-features = false, features = ["cpal"] }
-
-[target.'cfg(target_os = "android")'.dependencies]
-sasa = { path = "../sasa", default-features = false, features = ["oboe"] }
