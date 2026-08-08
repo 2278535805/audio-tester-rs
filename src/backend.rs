@@ -18,8 +18,8 @@ mod inner {
         buffer_size: None,
         performance_mode: PerformanceMode::LowLatency,
         audio_api: AudioApi::Unspecified,
-        sharing_mode: SharingMode::Exclusive,
-        usage: Usage::Game,
+        sharing_mode: SharingMode::Shared,
+        usage: Usage::Media,
     }) }
 }
 
