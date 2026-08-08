@@ -21,6 +21,13 @@ mod inner {
         sharing_mode: SharingMode::Shared,
         usage: Usage::Media,
     }) }
+    pub fn make_input_shared() -> AudioRecorderBackend { AudioRecorderBackend::new(OboeSettings {
+        buffer_size: None,
+        performance_mode: PerformanceMode::PowerSaving,
+        audio_api: AudioApi::Unspecified,
+        sharing_mode: SharingMode::Shared,
+        usage: Usage::Media,
+    }) }
 }
 
 #[cfg(not(target_os = "android"))]
@@ -32,6 +39,7 @@ mod inner {
     };
     pub fn make_output() -> AudioBackend { AudioBackend::new(CpalSettings::default()) }
     pub fn make_input() -> AudioRecorderBackend { AudioRecorderBackend::new(CpalSettings::default()) }
+    pub fn make_input_shared() -> AudioRecorderBackend { AudioRecorderBackend::new(CpalSettings::default()) }
 }
 
 pub use inner::*;

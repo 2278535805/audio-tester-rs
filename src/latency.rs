@@ -192,7 +192,7 @@ impl TapToToneTest {
         mgr.add_renderer(beep).map_err(|e| format!("{e}"))?;
         mgr.start().map_err(|e| format!("{e}"))?;
 
-        let backend_in = backend::make_input();
+        let backend_in = backend::make_input_shared();
         let mut rec = AudioRecorder::new_box(Box::new(backend_in)).map_err(|e| format!("{e}"))?;
         let buf = Arc::new(Mutex::new(RingBuffer::new(48000 * 5)));
         let tap_rec = TapRecorder::new(buf.clone(), position.clone(), sample_rate.clone());
@@ -244,16 +244,23 @@ impl TapToToneTest {
         let events_from_hp = apply_envelope_and_scan(&hp, sr_f,
             &mut self.viz_fast, &mut self.viz_slow, &mut self.viz_threshold);
 
-        let avg = average_filter(&hp);
-        let events_from_avg = apply_envelope_and_scan(&avg, sr_f,
-            &mut self.viz_fast, &mut self.viz_slow, &mut self.viz_threshold);
-
         if events_from_hp.len() == 2 {
             self.viz_samples = hp;
             self.viz_edges = events_from_hp;
         } else {
-            self.viz_samples = avg;
-            self.viz_edges = events_from_avg;
+            let avg = average_filter(&hp);
+            let events_from_avg = apply_envelope_and_scan(&avg, sr_f,
+                &mut self.viz_fast, &mut self.viz_slow, &mut self.viz_threshold);
+            if events_from_avg.len() == 2 {
+                self.viz_samples = avg;
+                self.viz_edges = events_from_avg;
+            } else {
+                let gentle_hp = high_pass(&samples, sr_f, 0.80);
+                let events_from_gentle = apply_envelope_and_scan(&gentle_hp, sr_f,
+                    &mut self.viz_fast, &mut self.viz_slow, &mut self.viz_threshold);
+                self.viz_samples = gentle_hp;
+                self.viz_edges = events_from_gentle;
+            }
         }
 
         if self.viz_edges.len() >= 2 {
@@ -485,7 +492,7 @@ fn apply_envelope_and_scan(buffer: &[f32], sample_rate: f64,
     slow_buf.clear();
     threshold_buf.clear();
 
-    let skip = (sample_rate * 0.015) as usize;
+    let skip = (sample_rate * 0.003) as usize;
 
     for i in 0..n {
         let level = envelope[i];
@@ -618,7 +625,7 @@ pub struct RoundTripTest {
 impl RoundTripTest {
     pub fn new() -> Result<Self, String> {
         let sr = 48000;
-        let pulse_len = sr as usize / 2; // 500ms
+        let pulse_len = sr as usize / 4;
         let pulse = Arc::new(generate_white_noise_pulse(pulse_len));
 
         let trigger = Arc::new(AtomicBool::new(false));
