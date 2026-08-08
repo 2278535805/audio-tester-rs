@@ -271,11 +271,12 @@ impl TapToToneTest {
     }
 
     pub fn render(&mut self) {
+        let s = crate::scale();
         let left = screen_width() * 0.08;
 
-        draw_text("Tap to Tone Latency Test", left, 60.0, 28.0, TEXT);
-        draw_text("Tap screen, press Space, or click button. Beep plays immediately.", left, 95.0, 16.0, TEXT_DIM);
-        draw_text("Latency = time from tap sound -> beep sound at microphone.", left, 115.0, 14.0, TEXT_DIM);
+        draw_text("Tap to Tone Latency Test", left, 60.0 * s, 28.0 * s, TEXT);
+        draw_text("Tap screen, press Space, or click button. Beep plays immediately.", left, 95.0 * s, 16.0 * s, TEXT_DIM);
+        draw_text("Latency = time from tap sound -> beep sound at microphone.", left, 115.0 * s, 14.0 * s, TEXT_DIM);
 
         if let Some(ref mut mgr) = self.manager {
             if mgr.consume_broken() { let _ = mgr.recover_if_needed(); }
@@ -294,8 +295,8 @@ impl TapToToneTest {
         }
 
         let cx = screen_width() / 2.0;
-        let cy = screen_height() / 2.0 + 30.0;
-        let tap_size = 180.0;
+        let cy = screen_height() / 2.0 - 40.0 * s;
+        let tap_size = 180.0 * s;
 
         let (mx, my) = mouse_position();
         let hovering = mx >= cx - tap_size / 2.0 && mx <= cx + tap_size / 2.0
@@ -311,14 +312,14 @@ impl TapToToneTest {
         draw_circle(cx, cy, tap_size / 2.0, tap_color);
 
         if self.measuring {
-            draw_text("Measuring...", cx - 50.0, cy + 10.0, 22.0, TEXT);
+            draw_text("Measuring...", cx - 50.0 * s, cy + 10.0 * s, 22.0 * s, TEXT);
         } else {
-            draw_text("TAP HERE", cx - 52.0, cy + 10.0, 24.0, TEXT);
+            draw_text("TAP HERE", cx - 52.0 * s, cy + 10.0 * s, 24.0 * s, TEXT);
         }
 
-        let btn_x = cx - 80.0;
-        let btn_y = cy + tap_size / 2.0 + 25.0;
-        if draw_button_colored(btn_x, btn_y, 160.0, 36.0, "Trigger Beep", 18.0, BTN_GREEN, BTN_GREEN_HOVER) {
+        let btn_x = cx - 80.0 * s;
+        let btn_y = cy + tap_size / 2.0 + 25.0 * s;
+        if draw_button_colored(btn_x, btn_y, 160.0 * s, 36.0 * s, "Trigger Beep", 18.0 * s, BTN_GREEN, BTN_GREEN_HOVER) {
             self.trigger_measurement();
         }
 
@@ -334,15 +335,16 @@ impl TapToToneTest {
         }
 
         if let Some(ms) = self.result_ms {
-            let result_y = cy + tap_size / 2.0 + 80.0;
+            let result_y = cy + tap_size / 2.0 + 80.0 * s;
+            let fs = 16.0 * s;
             if ms == -3.0 {
-                draw_text("Not enough audio captured - try again", cx - 140.0, result_y, 16.0, Color::new(1.0, 0.5, 0.3, 1.0));
+                draw_text("Not enough audio captured - try again", cx - 140.0 * s, result_y, fs, Color::new(1.0, 0.5, 0.3, 1.0));
             } else if ms == -2.0 {
-                draw_text("No edges detected - try again", cx - 110.0, result_y, 16.0, Color::new(1.0, 0.5, 0.3, 1.0));
+                draw_text("No edges detected - try again", cx - 110.0 * s, result_y, fs, Color::new(1.0, 0.5, 0.3, 1.0));
             } else if ms < 0.0 {
-                draw_text("Only 1 edge detected - tap harder or use fingernail", cx - 180.0, result_y, 16.0, Color::new(1.0, 0.5, 0.3, 1.0));
+                draw_text("Only 1 edge detected - tap harder or use fingernail", cx - 180.0 * s, result_y, fs, Color::new(1.0, 0.5, 0.3, 1.0));
             } else {
-                draw_text(&format!("Latency: {ms:.1} ms"), cx - 70.0, result_y, 28.0, Color::new(0.3, 1.0, 0.4, 1.0));
+                draw_text(&format!("Latency: {ms:.1} ms"), cx - 70.0 * s, result_y, 28.0 * s, Color::new(0.3, 1.0, 0.4, 1.0));
             }
         }
 
@@ -352,12 +354,13 @@ impl TapToToneTest {
     }
 
     fn draw_waveform(&self) {
+        let s = crate::scale();
         let sw = screen_width();
-        let margin = 40.0;
+        let margin = 40.0 * s;
         let wf_w = sw - margin * 2.0;
-        let wf_h = 120.0;
+        let wf_h = 120.0 * s;
         let wf_x = margin;
-        let wf_y = screen_height() - wf_h - 50.0;
+        let wf_y = screen_height() - wf_h - 50.0 * s;
 
         draw_rectangle(wf_x - 1.0, wf_y - 1.0, wf_w + 2.0, wf_h + 2.0, Color::new(0.2, 0.2, 0.25, 1.0));
         draw_rectangle(wf_x, wf_y, wf_w, wf_h, Color::new(0.05, 0.05, 0.08, 1.0));
@@ -398,7 +401,7 @@ impl TapToToneTest {
             }
         }
 
-        draw_text("Envelope (blue) | Fast avg (red) | --- = threshold", wf_x, wf_y - 16.0, 12.0, TEXT_DIM);
+        draw_text("Envelope (blue) | Fast avg (red)", wf_x, wf_y - 16.0 * s, 12.0 * s, TEXT_DIM);
 
         let labels = ["Tap", "Tone"];
         let colors = [Color::new(1.0, 0.8, 0.2, 0.9), Color::new(0.3, 1.0, 0.3, 0.9)];
@@ -407,8 +410,8 @@ impl TapToToneTest {
             let ex = wf_x + (edge as f32 / n as f32) * wf_w;
             draw_line(ex, wf_y, ex, wf_y + wf_h, 2.0, colors[k]);
             let time_ms = edge as f64 / self.viz_sr as f64 * 1000.0;
-            let lx = if ex > wf_x + wf_w / 2.0 { ex - 100.0 } else { ex + 4.0 };
-            draw_text(&format!("{}= {:.1}ms", labels[k], time_ms), lx, wf_y - 4.0, 13.0, colors[k]);
+            let lx = if ex > wf_x + wf_w / 2.0 { ex - 100.0 * s } else { ex + 4.0 * s };
+            draw_text(&format!("{}= {:.1}ms", labels[k], time_ms), lx, wf_y - 4.0 * s, 13.0 * s, colors[k]);
         }
     }
 
@@ -645,13 +648,14 @@ impl RoundTripTest {
     }
 
     pub fn render(&mut self) {
+        let s = crate::scale();
         let left = screen_width() * 0.08;
 
-        draw_text("Round Trip Latency Test", left, 60.0, 28.0, TEXT);
-        draw_text("Measures speaker -> microphone latency.", left, 95.0, 16.0, TEXT_DIM);
+        draw_text("Round Trip Latency Test", left, 60.0 * s, 28.0 * s, TEXT);
+        draw_text("Measures speaker -> microphone latency.", left, 95.0 * s, 16.0 * s, TEXT_DIM);
 
         if let Some(ref e) = self.error_text {
-            draw_text(e, left, 118.0, 14.0, Color::new(1.0, 0.3, 0.3, 1.0));
+            draw_text(e, left, 118.0 * s, 14.0 * s, Color::new(1.0, 0.3, 0.3, 1.0));
         }
 
         if let Some(ref mut mgr) = self.manager {
@@ -675,19 +679,19 @@ impl RoundTripTest {
         };
         let hover = if self.state == RtState::Idle || self.state == RtState::Done { BTN_GREEN_HOVER } else { color };
 
-        if draw_button_colored(cx - 100.0, cy - 20.0, 200.0, 48.0, label, 22.0, color, hover) {
+        if draw_button_colored(cx - 100.0 * s, cy - 20.0 * s, 200.0 * s, 48.0 * s, label, 22.0 * s, color, hover) {
             if self.state == RtState::Idle || self.state == RtState::Done {
                 self.start_measurement();
             }
         }
 
         if let Some(ms) = self.result_ms {
-            let result_y = cy + 80.0;
+            let result_y = cy + 80.0 * s;
             if ms < 0.0 {
                 let msg = self.error_text.as_deref().unwrap_or("Detection failed - ensure speaker is near microphone");
-                draw_text(msg, cx - 180.0, result_y, 18.0, Color::new(1.0, 0.5, 0.3, 1.0));
+                draw_text(msg, cx - 180.0 * s, result_y, 18.0 * s, Color::new(1.0, 0.5, 0.3, 1.0));
             } else {
-                draw_text(&format!("Round-trip latency: {ms:.2} ms"), cx - 130.0, result_y, 26.0, Color::new(0.3, 1.0, 0.4, 1.0));
+                draw_text(&format!("Round-trip latency: {ms:.2} ms"), cx - 130.0 * s, result_y, 26.0 * s, Color::new(0.3, 1.0, 0.4, 1.0));
             }
         }
 
@@ -697,12 +701,13 @@ impl RoundTripTest {
     }
 
     fn draw_waveform(&self) {
+        let s = crate::scale();
         let sw = screen_width();
-        let margin = 40.0;
+        let margin = 40.0 * s;
         let wf_w = sw - margin * 2.0;
-        let wf_h = 100.0;
+        let wf_h = 100.0 * s;
         let wf_x = margin;
-        let wf_y = screen_height() - wf_h - 40.0;
+        let wf_y = screen_height() - wf_h - 40.0 * s;
 
         draw_rectangle(wf_x - 1.0, wf_y - 1.0, wf_w + 2.0, wf_h + 2.0, Color::new(0.2, 0.2, 0.25, 1.0));
         draw_rectangle(wf_x, wf_y, wf_w, wf_h, Color::new(0.05, 0.05, 0.08, 1.0));
@@ -735,12 +740,12 @@ impl RoundTripTest {
                 if latency_samples < n {
                     let lx = wf_x + (latency_samples as f32 / n as f32) * wf_w;
                     draw_line(lx, wf_y, lx, wf_y + wf_h, 2.0, Color::new(0.3, 1.0, 0.4, 0.9));
-                    draw_text(&format!("peak={:.1}ms", ms), lx + 4.0, wf_y + 14.0, 12.0, Color::new(0.3, 1.0, 0.4, 1.0));
+                    draw_text(&format!("peak={:.1}ms", ms), lx + 4.0 * s, wf_y + 14.0 * s, 12.0 * s, Color::new(0.3, 1.0, 0.4, 1.0));
                 }
             }
         }
 
-        draw_text("Recorded audio", wf_x, wf_y - 16.0, 12.0, TEXT_DIM);
+        draw_text("Recorded audio", wf_x, wf_y - 16.0 * s, 12.0 * s, TEXT_DIM);
     }
 
     fn tick_state(&mut self) {

@@ -134,53 +134,54 @@ impl OutputTest {
     }
 
     pub fn render(&mut self) {
+        let s = crate::scale();
         let sw = screen_width();
         let left = sw * 0.08;
         let right = sw * 0.55;
 
-        draw_text("Output Test", left, 60.0, 32.0, TEXT);
+        draw_text("Output Test", left, 60.0 * s, 32.0 * s, TEXT);
 
         if let OutputState::Error(e) = &self.state {
-            draw_text(&format!("Error: {e}"), left, 120.0, 20.0, Color::new(1.0, 0.3, 0.3, 1.0));
+            draw_text(&format!("Error: {e}"), left, 120.0 * s, 20.0 * s, Color::new(1.0, 0.3, 0.3, 1.0));
             return;
         }
         if let OutputState::Running(mgr) = &mut self.state {
             if mgr.consume_broken() {
                 let _ = mgr.recover_if_needed();
             }
-            let latency_ms = mgr.estimate_latency() * 1000.0;
-            draw_text(&format!("Est. latency: {latency_ms:.1} ms"), right, 60.0, 18.0, TEXT_DIM);
+            let latency_ms = mgr.estimate_latency();
+            draw_text(&format!("Est. latency: {latency_ms:.4}"), right, 60.0 * s, 18.0 * s, TEXT_DIM);
         }
 
         let active = *self.params.active.lock();
-        let y_btn = screen_height() - 60.0;
-        if draw_button_colored(left, y_btn, 100.0, 36.0, if active { "Stop" } else { "Start" }, 20.0,
+        let y_btn = screen_height() - 60.0 * s;
+        if draw_button_colored(left, y_btn, 100.0 * s, 36.0 * s, if active { "Stop" } else { "Start" }, 20.0 * s,
             if active { BTN_RED } else { BTN_GREEN },
             if active { BTN_RED_HOVER } else { BTN_GREEN_HOVER },
         ) {
             *self.params.active.lock() = !active;
         }
 
-        let y = 100.0;
-        let w = 280.0;
+        let y = 100.0 * s;
+        let w = 280.0 * s;
 
-        draw_text("Frequency", left, y + 16.0, 18.0, TEXT_DIM);
-        self.freq_norm = draw_slider(left, y + 24.0, w, 14.0, self.freq_norm, "", false);
+        // draw_text("", left, y + 16.0 * s, 18.0 * s, TEXT_DIM);
+        self.freq_norm = draw_slider(left, y + 24.0 * s, w, 14.0 * s, self.freq_norm, "", false);
         let freq = log_slider_val(self.freq_norm, 20.0, 8000.0) as f64;
         *self.params.frequency.lock() = freq;
-        draw_text(&format!("{freq:.0} Hz"), left + w + 10.0, y + 32.0, 18.0, TEXT);
+        draw_text(&format!("Frequency: {freq:.0} Hz"), left + w + 12.0 * s, y + 30.0 * s, 16.0 * s, TEXT);
 
-        self.amp_norm = draw_slider(left, y + 60.0, w, 14.0, self.amp_norm, "Volume", false);
+        self.amp_norm = draw_slider(left, y + 60.0 * s, w, 14.0 * s, self.amp_norm, "Volume", false);
         *self.params.amplitude.lock() = self.amp_norm;
-        draw_text(&format!("{:.0}%", self.amp_norm * 100.0), left + w + 10.0, y + 68.0, 18.0, TEXT);
+        draw_text(&format!("{:.0}%", self.amp_norm * 100.0), left + w + 12.0 * s, y + 66.0 * s, 16.0 * s, TEXT);
 
         let waveforms = ["Sine", "Square", "Saw", "Triangle", "Noise", "Sweep"];
-        let wf_y = y + 110.0;
-        draw_text("Waveform", left, wf_y, 18.0, TEXT_DIM);
+        let wf_y = y + 110.0 * s;
+        draw_text("Waveform", left, wf_y, 18.0 * s, TEXT_DIM);
         for (i, name) in waveforms.iter().enumerate() {
-            let bx = left + i as f32 * 76.0;
+            let bx = left + i as f32 * 76.0 * s;
             let sel = i == self.waveform_idx;
-            if draw_button_colored(bx, wf_y + 8.0, 66.0, 30.0, name, 14.0,
+            if draw_button_colored(bx, wf_y + 8.0 * s, 66.0 * s, 30.0 * s, name, 14.0 * s,
                 if sel { BTN_GREEN } else { Color::new(0.25, 0.25, 0.30, 1.0) },
                 if sel { BTN_GREEN_HOVER } else { Color::new(0.35, 0.35, 0.40, 1.0) },
             ) {

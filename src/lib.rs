@@ -5,7 +5,23 @@ mod backend;
 
 use macroquad::prelude::*;
 
+pub fn scale() -> f32 { screen_height() / 720.0 }
+
 const BG: Color = Color::new(0.08, 0.08, 0.14, 1.0);
+
+fn init_logging() {
+    #[cfg(target_os = "android")]
+    {
+        android_logger::init_once(
+            android_logger::Config::default()
+                .with_max_level(log::LevelFilter::Debug)
+                .with_tag("audio-tester"),
+        );
+        std::panic::set_hook(Box::new(|info| {
+            log::error!("Panic: {}", info);
+        }));
+    }
+}
 const BTN: Color = Color::new(0.18, 0.45, 0.75, 1.0);
 const BTN_HOVER: Color = Color::new(0.25, 0.55, 0.88, 1.0);
 const BTN_GREEN: Color = Color::new(0.15, 0.65, 0.25, 1.0);
@@ -76,18 +92,17 @@ enum Screen {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn quad_main() {
-    macroquad::Window::from_config(
-        Conf {
+    macroquad::Window::from_config(Conf {
             window_title: "Audio Tester".into(),
             ..Default::default()
-        },
-        async {
-            run().await;
-        },
-    );
+        }, async {
+        the_main().await
+    });
 }
 
-async fn run() {
+async fn the_main() {
+    init_logging();
+
     let mut screen = Screen::Menu;
     let mut output_test: Option<output::OutputTest> = None;
     let mut input_test: Option<input::InputTest> = None;
@@ -110,7 +125,7 @@ async fn run() {
                     let _ = input_test.take();
                     let _ = latency_test.take();
                     output_test = Some(output::OutputTest::new().unwrap_or_else(|e| {
-                        eprintln!("Output test init error: {e}");
+                        log::error!("Output test init error: {e}");
                         output::OutputTest::dummy()
                     }));
                 }
@@ -123,7 +138,7 @@ async fn run() {
                     let _ = output_test.take();
                     let _ = latency_test.take();
                     input_test = Some(input::InputTest::new().unwrap_or_else(|e| {
-                        eprintln!("Input test init error: {e}");
+                        log::error!("Input test init error: {e}");
                         input::InputTest::dummy()
                     }));
                 }
@@ -137,7 +152,7 @@ async fn run() {
                     let _ = input_test.take();
                     let tp = matches!(screen, Screen::TapToTone);
                     latency_test = Some(latency::LatencyTests::new(tp).unwrap_or_else(|e| {
-                        eprintln!("Latency test init error: {e}");
+                        log::error!("Latency test init error: {e}");
                         latency::LatencyTests::dummy()
                     }));
                 }
@@ -152,25 +167,28 @@ async fn run() {
 }
 
 fn draw_back_button() -> bool {
-    draw_button_colored(12.0, 12.0, 90.0, 34.0, "< Back", 22.0, Color::new(0.3, 0.3, 0.35, 1.0), Color::new(0.45, 0.45, 0.50, 1.0))
+    let s = scale();
+    draw_button_colored(12.0 * s, 12.0 * s, 90.0 * s, 34.0 * s, "< Back", 22.0 * s, Color::new(0.3, 0.3, 0.35, 1.0), Color::new(0.45, 0.45, 0.50, 1.0))
 }
 
 fn draw_menu() -> Option<Screen> {
+    let s = scale();
     let sw = screen_width();
     let sh = screen_height();
-    let btn_w = 320.0;
-    let btn_h = 52.0;
-    let gap = 66.0;
-    let start_y = sh / 2.0 - 140.0;
+    let btn_w = 320.0 * s;
+    let btn_h = 52.0 * s;
+    let gap = 66.0 * s;
+    let start_y = sh / 2.0 - 140.0 * s;
     let x = sw / 2.0 - btn_w / 2.0;
 
+    let fs = 44.0 * s;
     let title = "Audio Tester";
-    let title_dim = measure_text(title, None, 44, 1.0);
-    draw_text(title, sw / 2.0 - title_dim.width / 2.0, start_y - 50.0, 44.0, TEXT);
+    let title_dim = measure_text(title, None, fs as u16, 1.0);
+    draw_text(title, sw / 2.0 - title_dim.width / 2.0, start_y - 50.0 * s, fs, TEXT);
 
-    if draw_button(x, start_y, btn_w, btn_h, "Output Test", 26.0) { return Some(Screen::OutputTest); }
-    if draw_button(x, start_y + gap, btn_w, btn_h, "Input Test", 26.0) { return Some(Screen::InputTest); }
-    if draw_button(x, start_y + gap * 2.0, btn_w, btn_h, "Round Trip Latency", 22.0) { return Some(Screen::RoundTripLatency); }
-    if draw_button(x, start_y + gap * 3.0, btn_w, btn_h, "Tap to Tone Latency", 22.0) { return Some(Screen::TapToTone); }
+    if draw_button(x, start_y, btn_w, btn_h, "Output Test", 26.0 * s) { return Some(Screen::OutputTest); }
+    if draw_button(x, start_y + gap, btn_w, btn_h, "Input Test", 26.0 * s) { return Some(Screen::InputTest); }
+    if draw_button(x, start_y + gap * 2.0, btn_w, btn_h, "Round Trip Latency", 22.0 * s) { return Some(Screen::RoundTripLatency); }
+    if draw_button(x, start_y + gap * 3.0, btn_w, btn_h, "Tap to Tone Latency", 22.0 * s) { return Some(Screen::TapToTone); }
     None
 }
