@@ -1,0 +1,14 @@
+[package]
+name = "audio-tester-rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+macroquad = { git = "https://github.com/2278535805/macroquad" }
+parking_lot = "0.12"
+
+[target.'cfg(not(target_os = "android"))'.dependencies]
+sasa = { path = "../sasa", default-features = false, features = ["cpal"] }
+
+[target.'cfg(target_os = "android")'.dependencies]
+sasa = { path = "../sasa", default-features = false, features = ["oboe"] }
