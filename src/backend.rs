@@ -30,8 +30,16 @@ mod inner {
         OhosRecorderBackend as AudioRecorderBackend,
         OhosSettings,
     };
-    pub fn make_output() -> AudioBackend { AudioBackend::new(OhosSettings::default()) }
-    pub fn make_input() -> AudioRecorderBackend { AudioRecorderBackend::new(OhosSettings::default()) }
+    pub fn make_output() -> AudioBackend { AudioBackend::new(OhosSettings {
+        latency_mode: OhosLatencyMode::Fast,
+        usage: OhosUsage::Game,
+        ..Default::default()
+    }) }
+    pub fn make_input() -> AudioRecorderBackend { AudioRecorderBackend::new(OhosSettings {
+        latency_mode: OhosLatencyMode::Fast,
+        usage: OhosUsage::Game,
+        ..Default::default()
+    }) }
     pub fn make_input_shared() -> AudioRecorderBackend { AudioRecorderBackend::new(OhosSettings::default()) }
 }
 
