@@ -34,6 +34,7 @@ mod inner {
     pub fn make_output() -> AudioBackend { AudioBackend::new(OhosSettings {
         latency_mode: OhosLatencyMode::Fast,
         usage: OhosUsage::Game,
+        buffer_size: Some(240),
         ..Default::default()
     }) }
     pub fn make_input() -> AudioRecorderBackend { AudioRecorderBackend::new(OhosSettings {

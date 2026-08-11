@@ -93,6 +93,7 @@ pub struct OutputTest {
     freq_norm: f32,
     amp_norm: f32,
     waveform_idx: usize,
+    stream_info: String,
 }
 
 impl OutputTest {
@@ -111,7 +112,11 @@ impl OutputTest {
             params: params.clone(),
         };
         mgr.add_renderer(renderer).map_err(|e| format!("{e}"))?;
-        mgr.start().map_err(|e| format!("{e}"))?;
+        let stream_info = {
+            let text = mgr.stream_info().to_string();
+            eprintln!("[OutputTest] stream info:\n{text}");
+            text
+        };
 
         Ok(Self {
             state: OutputState::Running(mgr),
@@ -119,6 +124,7 @@ impl OutputTest {
             freq_norm: log_slider_to_norm(440.0, 20.0, 8000.0),
             amp_norm: 0.5,
             waveform_idx: 0,
+            stream_info,
         })
     }
 
@@ -130,6 +136,7 @@ impl OutputTest {
                 waveform: Mutex::new(Waveform::Sine), active: Mutex::new(false),
             }),
             freq_norm: 0.5, amp_norm: 0.5, waveform_idx: 0,
+            stream_info: String::new(),
         }
     }
 
@@ -152,7 +159,17 @@ impl OutputTest {
             let latency_ms = mgr.estimate_latency();
             draw_text(&format!("Est. latency: {latency_ms:.4}"), right, 60.0 * s, 18.0 * s, TEXT_DIM);
         }
-
+        if !self.stream_info.is_empty() {
+            let lines: Vec<&str> = self.stream_info.lines().collect();
+            let fs = 13.0 * s;
+            let lh = fs + 3.0 * s;
+            let mut info_y = screen_height() - 66.0 * s - lines.len() as f32 * lh;
+            for line in lines {
+                let col = if line.contains("frame_size_in_callback") { TEXT } else { TEXT_DIM };
+                draw_text(line, left, info_y, fs, col);
+                info_y += lh;
+            }
+        }
         let active = *self.params.active.lock();
         let y_btn = screen_height() - 60.0 * s;
         if draw_button_colored(left, y_btn, 100.0 * s, 36.0 * s, if active { "Stop" } else { "Start" }, 20.0 * s,
